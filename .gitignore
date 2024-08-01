@@ -1,0 +1,77 @@
+# Byte-compiled / otimizados / arquivos DLL
+__pycache__/
+*.pyc
+*.pyo
+
+# Extensões C
+*.so
+
+# Distribuição / empacotamento
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Logs do instalador
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Relatórios de testes unitários / cobertura
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Traduções
+*.mo
+*.pot
+
+# Coisas do Django:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Coisas do Flask:
+instance/
+.webassets-cache
+
+# Coisas do Scrapy:
+.scrapy
+
+# Documentação do Sphinx
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Perfil IPython
+profile_default/
+ipython_config.py
