@@ -2,6 +2,7 @@ from pathlib import Path
 from asammdf import MDF
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class VDVAnalysis:
     def __init__(self, currentGear, selectedGear, signals, mdf_extension, input_folder, shift_mode) -> None:
@@ -16,6 +17,8 @@ class VDVAnalysis:
         self.timestampChangeToShiftInProcess = []
         self.timestampChangeToShiftNotInProcess = []
         self.windows = []
+        self.data = []
+        self.results = []
 
     def __initialization(self):
         # load MDF/DBC files from input folder
@@ -47,7 +50,7 @@ class VDVAnalysis:
     def analyzer(self):
         data = self.__initialization()
         windows = self.__processing(data)
-        results = []
+        
         for i in range(len(windows)):
             window = pd.DataFrame(windows[i])
             window = self.__verificationFirstRow(window)
@@ -85,13 +88,16 @@ class VDVAnalysis:
                     'select_gear' : self.selectedGear,
                     'current_gear' : self.currentGear,
                 }, 
-                window]
+                ]
                 window.to_csv(f'VDV_{self.shift_mode}_{self.selectedGear}_GEAR_{i}_.csv') 
-                results.append(result)
-        else:
-            print(f"The Acquisition {i} was rejected ...")
+                self.results.append(result)
+                self.__plot(data=window, res=result)
+
+            else:
+                print(f"The Acquisition {i} was rejected ...")
+        
         print(f'Analyzer VDV finished')
-        return results
+        return self.results
 
     def get_maxCurrentGear(self):
         return float(self.MAXCURRENTGEAR)
@@ -200,9 +206,41 @@ class VDVAnalysis:
             result = verification.any()
             return result
 
-    
-            
+    def __normalizedScale(self, signal):
+        return (signal - min(signal)) / (max(signal) - min(signal))
         
+
+
+    def __plot(self, data, res):
+       for i in range (len(res)):
+            x = data.index
+            y1 = data['TransSelectedGear']
+            y2 = data['TransCurrentGear']
+            y3 = data['TransInputShaftSpeed']
+            y4 = data['EngSpeed']
+            y5 = data['TransOutputShaftSpeed']
+            name =res[i]['name']
+            shift_duration = res[i]['shift_duration']
+            VDV = res[i]['VDV']
+            print(name)
+    
+            fig, ax1 = plt.subplots()
+            ax1.plot(x, y1, label="TransSelectedGear", color="orange")
+            ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
+
+            ax2 = ax1.twinx()
+            ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
+            ax2.plot(x, y4, label='EngSpeed', color= "yellow")
+            ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
+            textstr = f'name={name}\nShit Duration={shift_duration:.2f}\nVDV={VDV:.2f}'
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            ax1.text(0.05, 0.55, textstr, transform=ax1.transAxes, fontsize=8,
+            verticalalignment='top', bbox=props)
+            plt.title('VDV WINDOW ANALYSIS')
+            plt.legend()
+           
+            plt.show()    
+
     def result(self, result, index):
         for i in range (len(result)):
             name =result[i][index]['name']
@@ -211,4 +249,4 @@ class VDVAnalysis:
             selectGear = result[i][index]['select_gear']
             currentGear = result[i][index]['current_gear']
             print(f' The Vibration Dose Value of {name} in {currentGear}->{selectGear} gear is {VDV} with {shift_duration} seconds.')
-        
+           
