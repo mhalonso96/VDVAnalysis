@@ -1,5 +1,5 @@
 from pathlib import Path
-from asammdf import MDF
+from asammdf import MDF, Signal
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -29,7 +29,7 @@ class VDVAnalysis:
         mdf = MDF.concatenate(logfiles)
         mdf_scaled = mdf.filter(self.signals)
         frame = mdf_scaled.to_dataframe(time_as_date=True)
-
+        
         if self.shift_mode == "UPSHIFT":
 
             data = frame.loc[(frame['TransSelectedGear'] == self.selectedGear) & (frame['TransCurrentGear'] <= self.selectedGear)]
@@ -38,7 +38,7 @@ class VDVAnalysis:
         else:
             data = frame.loc[(frame['TransSelectedGear'] == self.selectedGear) & (frame['TransCurrentGear'] <= self.currentGear)]
             data["StateChange"] = (data["TransShiftInProcess"] != data["TransShiftInProcess"].shift()).astype(int)
-        
+        data.to_csv('teste.csv')
         return data
     
     def __processing(self, data):
@@ -56,8 +56,10 @@ class VDVAnalysis:
             window = self.__verificationFirstRow(window)
             isWindowCorrect = self.__existsSignalInWindow(signal_1="TransCurrentGear", signal_2="TransSelectedGear", window=window)
             isShiftMode = self. __isShiftMode(window=window)
-               
-            if len(window) > 100 and isWindowCorrect and not isShiftMode:
+            print(len(window))
+            print(isWindowCorrect)
+            print(isShiftMode)
+            if len(window) > 70 and isWindowCorrect and not isShiftMode:
 
                 window.loc[:,'Delta_Time'] = window.index.to_series().diff()
                 window.loc[:,'Delta_Time'] = window.loc[:,'Delta_Time'].dt.total_seconds()
@@ -65,7 +67,6 @@ class VDVAnalysis:
                 dt = self.__dtCalculation(signal_delta_time="Delta_Time", window=window)
                 vdvIS = self.__calculationVDV(signal="TransInputShaftSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
                 vdvOS = self.__calculationVDV(signal="TransOutputShaftSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
-                vdvES = self.__calculationVDV(signal="EngSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
                 window = window.fillna(0)
                 
                 result = [{
@@ -79,12 +80,6 @@ class VDVAnalysis:
                     'name' : "TRANS OUTPUT SHAFT SPEED",
                     'shift_duration' : shiftDuration,
                     'VDV': vdvOS,
-                    'select_gear' : self.selectedGear,
-                    'current_gear' : self.currentGear,
-                },
-                {   'name' : "ENG SPEED",
-                    'shift_duration' : shiftDuration,
-                    'VDV': vdvES,
                     'select_gear' : self.selectedGear,
                     'current_gear' : self.currentGear,
                 }, 
@@ -117,21 +112,21 @@ class VDVAnalysis:
     def set_window(self, data):
         for i in range(0, len(data)):
             stateChange = data.iloc[i]['StateChange']
-
+            ## Define a janela de Start
             if self.shift_mode == "UPSHIFT":
             
-                if stateChange == 1 and data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' and data.iloc[i]["TransCurrentGear"] <= self.MAXCURRENTGEAR:
+                if stateChange == 1 and (data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' or data.iloc[i]["TransShiftInProcess"] == b'Shift in process') and data.iloc[i]["TransCurrentGear"] <= self.MAXCURRENTGEAR:
                     self.timestampChangeToShiftInProcess.append(i)
           
             else:
-                if stateChange == 1 and data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' and data.iloc[i]["TransCurrentGear"] == self.currentGear:
+                if stateChange == 1 and (data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' or data.iloc[i]["TransShiftInProcess"] == b'Shift in process') and data.iloc[i]["TransCurrentGear"] == self.currentGear:
                     self.timestampChangeToShiftInProcess.append(i)
                     
         for j in range(len(self.timestampChangeToShiftInProcess)):
             
             for k in range(self.timestampChangeToShiftInProcess[j], len(data)):
                 stateChange = data.iloc[k]['StateChange']
-                if stateChange == 1 and data.iloc[k]["TransShiftInProcess"] == b'ShiftIsNotInProcess':
+                if stateChange == 1 and (data.iloc[k]["TransShiftInProcess"] ==  b'ShiftIsNotInProcess' or data.iloc[k]["TransShiftInProcess"] ==  b'Shift is not in process'):
                     self.timestampChangeToShiftNotInProcess.append(k)                    
                     break 
             try:  
@@ -172,7 +167,8 @@ class VDVAnalysis:
     
     def __existsSignalInWindow(self, signal_1, signal_2, window):
         for j in range(len(window)):
-                if window.iloc[j][f'{signal_1}'] == window.iloc[j][f'{signal_2}']:
+                
+                if (window.iloc[j][f'{signal_1}'] == window.iloc[j][f'{signal_2}']):
                     result = True
                 else:
                     result = False
@@ -212,34 +208,38 @@ class VDVAnalysis:
 
 
     def __plot(self, data, res):
-       for i in range (len(res)):
-            x = data.index
-            y1 = data['TransSelectedGear']
-            y2 = data['TransCurrentGear']
-            y3 = data['TransInputShaftSpeed']
-            y4 = data['EngSpeed']
-            y5 = data['TransOutputShaftSpeed']
-            name =res[i]['name']
-            shift_duration = res[i]['shift_duration']
-            VDV = res[i]['VDV']
-            print(name)
+        x = data.index
+        y1 = data['TransSelectedGear']
+        y2 = data['TransCurrentGear']
+        y3 = data['TransInputShaftSpeed']
+        y5 = data['TransOutputShaftSpeed']
+        name_1 =res[0]['name']
+        shift_duration_1 = res[0]['shift_duration']
+        VDV_1 = res[0]['VDV']
+        name_2 =res[1]['name']
+        shift_duration_2 = res[1]['shift_duration']
+        VDV_2 = res[1]['VDV']
+                
     
-            fig, ax1 = plt.subplots()
-            ax1.plot(x, y1, label="TransSelectedGear", color="orange")
-            ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
+        fig, ax1 = plt.subplots()
+        ax1.plot(x, y1, label="TransSelectedGear", color="orange")
+        ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
 
-            ax2 = ax1.twinx()
-            ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
-            ax2.plot(x, y4, label='EngSpeed', color= "yellow")
-            ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
-            textstr = f'name={name}\nShit Duration={shift_duration:.2f}\nVDV={VDV:.2f}'
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax1.text(0.05, 0.55, textstr, transform=ax1.transAxes, fontsize=8,
-            verticalalignment='top', bbox=props)
-            plt.title('VDV WINDOW ANALYSIS')
-            plt.legend()
+        ax2 = ax1.twinx()
+        ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
            
-            plt.show()    
+        ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
+        textstr_1 = f'name={name_1}\nShit Duration={shift_duration_1:.2f}\nVDV={VDV_1:.2f}'
+        textstr_2 = f'name={name_2}\nShit Duration={shift_duration_2:.2f}\nVDV={VDV_2:.2f}'
+        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
+        verticalalignment='top', bbox=props)
+        ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
+        verticalalignment='top', bbox=props)
+        plt.title('VDV WINDOW ANALYSIS')
+        plt.legend()
+           
+        plt.show()    
 
     def result(self, result, index):
         for i in range (len(result)):
