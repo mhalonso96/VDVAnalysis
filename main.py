@@ -16,8 +16,8 @@ signals = [
 mdf_extension = ".mf4"
 input_folder = "logs"
 
-test = VDVAnalysis(currentGear=6,
-                    selectedGear=4, 
+test = VDVAnalysis(currentGear=10,
+                    selectedGear=8, 
                     signals=signals, 
                     mdf_extension=mdf_extension, 
                     input_folder=input_folder,
