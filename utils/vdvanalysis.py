@@ -38,7 +38,7 @@ class VDVAnalysis:
         else:
             data = frame.loc[(frame['TransSelectedGear'] == self.selectedGear) & (frame['TransCurrentGear'] <= self.currentGear)]
             data["StateChange"] = (data["TransShiftInProcess"] != data["TransShiftInProcess"].shift()).astype(int)
-        data.to_csv('teste.csv')
+        
         return data
     
     def __processing(self, data):
