@@ -167,11 +167,17 @@ class VDVAnalysis:
     
     def __existsSignalInWindow(self, signal_1, signal_2, window):
         for j in range(len(window)):
-                
+            if self.shift_mode == "UPSHIFT":
                 if (window.iloc[j][f'{signal_1}'] == window.iloc[j][f'{signal_2}']):
                     result = True
                 else:
                     result = False
+            else:
+                if (window.iloc[j][f'{signal_1}'] >= window.iloc[j][f'{signal_2}']):
+                    result = True
+                else:
+                    result = False
+
         return result
                 
                 
