@@ -36,13 +36,17 @@ class VDVAnalysis:
             data["StateChange"] = (data["TransShiftInProcess"] != data["TransShiftInProcess"].shift()).astype(int)
         
         else:
+            #data = frame
             data = frame.loc[(frame['TransSelectedGear'] == self.selectedGear) & (frame['TransCurrentGear'] <= self.currentGear)]
             data["StateChange"] = (data["TransShiftInProcess"] != data["TransShiftInProcess"].shift()).astype(int)
+            data["TransSelectedGear"]= pd.to_numeric(data['TransSelectedGear']).astype(int)
+            data["TransCurrentGear"]= pd.to_numeric(data['TransCurrentGear']).astype(int)
+            
         
         return data
     
     def __processing(self, data):
-
+        # data.to_csv('teste.csv')
         windows =self.set_window(data)  
         print(f'Process VDV finished')            
         return windows
@@ -56,15 +60,13 @@ class VDVAnalysis:
             window = self.__verificationFirstRow(window)
             isWindowCorrect = self.__existsSignalInWindow(signal_1="TransCurrentGear", signal_2="TransSelectedGear", window=window)
             isShiftMode = self. __isShiftMode(window=window)
-            print(len(window))
-            print(isWindowCorrect)
-            print(isShiftMode)
-            if len(window) > 70 and isWindowCorrect and not isShiftMode:
+            window.loc[:,'Delta_Time'] = window.index.to_series().diff()
+            window.loc[:,'Delta_Time'] = window.loc[:,'Delta_Time'].dt.total_seconds()  
+            dt = self.__dtCalculation(signal_delta_time="Delta_Time", window=window)
+            shiftDuration = self.__shiftDurationCalculation(signal_delta_time="Delta_Time", window=window)
+           
+            if len(window) > 70 and isWindowCorrect and not isShiftMode and (shiftDuration < 5):
 
-                window.loc[:,'Delta_Time'] = window.index.to_series().diff()
-                window.loc[:,'Delta_Time'] = window.loc[:,'Delta_Time'].dt.total_seconds()
-                shiftDuration = self.__shiftDurationCalculation(signal_delta_time="Delta_Time", window=window)
-                dt = self.__dtCalculation(signal_delta_time="Delta_Time", window=window)
                 vdvIS = self.__calculationVDV(signal="TransInputShaftSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
                 vdvOS = self.__calculationVDV(signal="TransOutputShaftSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
                 window = window.fillna(0)
@@ -119,17 +121,28 @@ class VDVAnalysis:
                     self.timestampChangeToShiftInProcess.append(i)
           
             else:
-                if stateChange == 1 and (data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' or data.iloc[i]["TransShiftInProcess"] == b'Shift in process') and data.iloc[i]["TransCurrentGear"] == self.currentGear:
+                if stateChange == 1 and (data.iloc[i]["TransShiftInProcess"] == b'ShiftInProcess' or data.iloc[i]["TransShiftInProcess"] == b'Shift in process') and data.iloc[i]["TransSelectedGear"] == self.selectedGear and data.iloc[i]["TransCurrentGear"] == self.currentGear:
                     self.timestampChangeToShiftInProcess.append(i)
                     
         for j in range(len(self.timestampChangeToShiftInProcess)):
             
             for k in range(self.timestampChangeToShiftInProcess[j], len(data)):
-                stateChange = data.iloc[k]['StateChange']
-                if stateChange == 1 and (data.iloc[k]["TransShiftInProcess"] ==  b'ShiftIsNotInProcess' or data.iloc[k]["TransShiftInProcess"] ==  b'Shift is not in process'):
-                    self.timestampChangeToShiftNotInProcess.append(k)                    
-                    break 
+                if self.shift_mode == "UPSHIFT":
+                    stateChange = data.iloc[k]['StateChange']
+                    if stateChange == 1 and (data.iloc[k]["TransShiftInProcess"] ==  b'ShiftIsNotInProcess' or data.iloc[k]["TransShiftInProcess"] ==  b'Shift is not in process'):                                          
+                        self.timestampChangeToShiftNotInProcess.append(k)  
+                        break 
+                else:
+                    stateChange = data.iloc[k]['StateChange']
+                    # condition = (data.iloc[k]["TransShiftInProcess"] ==  b'ShiftIsNotInProcess' or data.iloc[k]["TransShiftInProcess"] ==  b'Shift is not in process')
+                    # print(condition)
+                    if stateChange == 1 and (data.iloc[k]["TransShiftInProcess"] ==  b'ShiftIsNotInProcess' or data.iloc[k]["TransShiftInProcess"] ==  b'Shift is not in process') and data.iloc[k]["TransCurrentGear"] == self.selectedGear and data.iloc[k]["TransSelectedGear"] == self.selectedGear:
+                        self.timestampChangeToShiftNotInProcess.append(k)  
+                                          
+                        break 
+
             try:  
+                #print(f'Start: {self.timestampChangeToShiftInProcess} End: {self.timestampChangeToShiftNotInProcess}') 
                 self.windows.append(data.iloc[self.timestampChangeToShiftInProcess[j]:self.timestampChangeToShiftNotInProcess[j]])
             except:
                 continue
@@ -173,7 +186,7 @@ class VDVAnalysis:
                 else:
                     result = False
             else:
-                if (window.iloc[j][f'{signal_1}'] >= window.iloc[j][f'{signal_2}']):
+                if (window.iloc[j][f'{signal_1}'] == window.iloc[j][f'{signal_2}']):
                     result = True
                 else:
                     result = False
