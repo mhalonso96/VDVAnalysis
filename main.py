@@ -7,8 +7,8 @@ signals = [
     # "ActualEngPercentTorque",
     # "EngReferenceTorque",
     # "NominalFrictionPercentTorque",
-    # "WheelBasedVehicleSpeed",
-    # "EngSpeed",
+    "WheelBasedVehicleSpeed",
+    "EngSpeed",
     "TransOutputShaftSpeed",
     "TransInputShaftSpeed",
     "TransShiftInProcess"
@@ -16,14 +16,15 @@ signals = [
 mdf_extension = ".mf4"
 input_folder = "logs"
 
-test = VDVAnalysis(currentGear=8,
+test = VDVAnalysis(currentGear=5,
                     selectedGear=6, 
                     signals=signals, 
                     mdf_extension=mdf_extension, 
                     input_folder=input_folder,
-                    shift_mode="DOWNSHIFT"
+                    shift_mode="UPSHIFT"
                     )
 
 res = test.analyzer()
-print(test.result(res, index=0))
-print(test.result(res, index=1))
+print(test.result(res))
+test.plot(res)
+

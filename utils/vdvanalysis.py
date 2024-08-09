@@ -26,10 +26,11 @@ class VDVAnalysis:
         path_in = Path(path, self.input_folder)
         
         logfiles = list(path_in.glob("*" + self.mdf_extension))
-        mdf = MDF.concatenate(logfiles)
-        mdf_scaled = mdf.filter(self.signals)
-        frame = mdf_scaled.to_dataframe(time_as_date=True)
-        
+        # mdf = MDF.concatenate(logfiles)
+        # mdf_scaled = mdf.filter(self.signals)
+        mdf= MDF(logfiles[0])
+        mdf_scaled = mdf.to_dataframe(time_as_date=True)
+        frame = mdf_scaled[self.signals]
         if self.shift_mode == "UPSHIFT":
 
             data = frame.loc[(frame['TransSelectedGear'] == self.selectedGear) & (frame['TransCurrentGear'] <= self.selectedGear)]
@@ -71,28 +72,25 @@ class VDVAnalysis:
                 vdvOS = self.__calculationVDV(signal="TransOutputShaftSpeed",signal_delta_time="Delta_Time", window=window, dt=dt, diameter=0.762)
                 window = window.fillna(0)
                 
-                result = [{
-                    'name' : "TRANS INPUT SHAFT SPEED",
+                result = {
+                    'name_IS' : "TRANS INPUT SHAFT SPEED",
                     'shift_duration' : shiftDuration, 
-                    'VDV': vdvIS,
-                    'select_gear' : self.selectedGear,
-                    'current_gear' : self.currentGear
-                },
-                {
-                    'name' : "TRANS OUTPUT SHAFT SPEED",
-                    'shift_duration' : shiftDuration,
-                    'VDV': vdvOS,
+                    'VDV_IS': vdvIS,
+                    'name_OS' : "TRANS OUTPUT SHAFT SPEED",
+                    'VDV_OS': vdvOS,
                     'select_gear' : self.selectedGear,
                     'current_gear' : self.currentGear,
-                }, 
-                ]
+                    'window' : window,
+                }
+                
                 window.to_csv(f'VDV_{self.shift_mode}_{self.selectedGear}_GEAR_{i}_.csv') 
                 self.results.append(result)
-                self.__plot(data=window, res=result)
+                print(f"The Acquisition {i} was approved ...")
+                
 
             else:
                 print(f"The Acquisition {i} was rejected ...")
-        
+
         print(f'Analyzer VDV finished')
         return self.results
 
@@ -226,46 +224,86 @@ class VDVAnalysis:
         
 
 
-    def __plot(self, data, res):
-        x = data.index
-        y1 = data['TransSelectedGear']
-        y2 = data['TransCurrentGear']
-        y3 = data['TransInputShaftSpeed']
-        y5 = data['TransOutputShaftSpeed']
-        name_1 =res[0]['name']
-        shift_duration_1 = res[0]['shift_duration']
-        VDV_1 = res[0]['VDV']
-        name_2 =res[1]['name']
-        shift_duration_2 = res[1]['shift_duration']
-        VDV_2 = res[1]['VDV']
+    def plot(self, res):
+        ...
+    # #    fig, axs = plt.subplots(2, 2, layout='constrained')
+    #     for i in range(len(res)):
+    #         x = res[i]['window']
+    #         print(x)
+        # y1 = data['TransSelectedGear']
+        # y2 = data['TransCurrentGear']
+        # y3 = data['TransInputShaftSpeed']
+        # y4 = data['EngSpeed']
+        # y5 = data['TransOutputShaftSpeed']
+        # y6 = data['WheelBasedVehicleSpeed']
+        # name_1 =res[0]['name']
+        # shift_duration_1 = res[0]['shift_duration']
+        # VDV_1 = res[0]['VDV']
+        # name_2 =res[1]['name']
+        # shift_duration_2 = res[1]['shift_duration']
+        # VDV_2 = res[1]['VDV']
                 
     
-        fig, ax1 = plt.subplots()
-        ax1.plot(x, y1, label="TransSelectedGear", color="orange")
-        ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
+        # fig, ax1 = plt.subplots()
+        # ax1.plot(x, y1, label="TransSelectedGear", color="orange")
+        # ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
 
-        ax2 = ax1.twinx()
-        ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
-           
-        ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
-        textstr_1 = f'name={name_1}\nShit Duration={shift_duration_1:.2f}\nVDV={VDV_1:.2f}'
-        textstr_2 = f'name={name_2}\nShit Duration={shift_duration_2:.2f}\nVDV={VDV_2:.2f}'
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
-        verticalalignment='top', bbox=props)
-        ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
-        verticalalignment='top', bbox=props)
-        plt.title('VDV WINDOW ANALYSIS')
-        plt.legend()
-           
+        # ax2 = ax1.twinx()
+        # ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
+        # ax2.plot(x, y4, label='EngSpeed', color= "yellow")   
+        # ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
+        # ax3 = ax1.twinx()
+        # ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color= "black")
+        # textstr_1 = f'name={name_1}\nShit Duration={shift_duration_1:.2f}\nVDV={VDV_1:.2f}'
+        # textstr_2 = f'name={name_2}\nShit Duration={shift_duration_2:.2f}\nVDV={VDV_2:.2f}'
+        # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        # ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
+        # verticalalignment='top', bbox=props)
+        # ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
+        # verticalalignment='top', bbox=props)
+        # plt.title('VDV WINDOW ANALYSIS')
+        # plt.legend() 
+        # plt.show()    
+
+    def result(self, result):
+        for i in range (len(result)):
+            name_IS =result[i]['name_IS']
+            name_OS =result[i]['name_OS']
+            shift_duration = result[i]['shift_duration']
+            vdv_IS = result[i]['VDV_IS']
+            vdv_OS = result[i]['VDV_OS']
+            selectGear = result[i]['select_gear']
+            currentGear = result[i]['current_gear']
+            print(f' {i} - The Vibration Dose Value of {name_IS} in {currentGear}->{selectGear} gear is {vdv_IS} with {shift_duration} seconds.')
+            print(f' {i} - The Vibration Dose Value of {name_OS} in {currentGear}->{selectGear} gear is {vdv_OS} with {shift_duration} seconds.')
+            x = result[i]['window'].index
+            y1 = result[i]['window']['TransSelectedGear']
+            y2 = result[i]['window']['TransCurrentGear']
+            y3 = result[i]['window']['TransInputShaftSpeed']
+            y4 = result[i]['window']['EngSpeed']
+            y5 = result[i]['window']['TransOutputShaftSpeed']
+            y6 = result[i]['window']['WheelBasedVehicleSpeed']
+            
+            fig, ax1 = plt.subplots()
+            ax1.plot(x, y1, label="TransSelectedGear", color="orange")
+            ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
+
+            ax2 = ax1.twinx()
+            ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
+            ax2.plot(x, y4, label='EngSpeed', color= "yellow")   
+            ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
+            ax3 = ax1.twinx()
+            ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color= "black")
+            textstr_1 = f'name={name_IS}\nShit Duration={shift_duration:.2f}\nVDV={vdv_IS:.2f}'
+            textstr_2 = f'name={name_OS}\nShit Duration={shift_duration:.2f}\nVDV={vdv_OS:.2f}'
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+            ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
+            verticalalignment='top', bbox=props)
+            ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
+            verticalalignment='top', bbox=props)
+            plt.legend() 
+            plt.title('VDV WINDOW ANALYSIS')
+        
         plt.show()    
 
-    def result(self, result, index):
-        for i in range (len(result)):
-            name =result[i][index]['name']
-            shift_duration = result[i][index]['shift_duration']
-            VDV = result[i][index]['VDV']
-            selectGear = result[i][index]['select_gear']
-            currentGear = result[i][index]['current_gear']
-            print(f' The Vibration Dose Value of {name} in {currentGear}->{selectGear} gear is {VDV} with {shift_duration} seconds.')
-           
+            
