@@ -11,7 +11,8 @@ signals = [
     "EngSpeed",
     "TransOutputShaftSpeed",
     "TransInputShaftSpeed",
-    "TransShiftInProcess"
+    "TransShiftInProcess",
+    "LCIBEVO_IBkActive",
     ]
 mdf_extension = ".mf4"
 input_folder = "logs"

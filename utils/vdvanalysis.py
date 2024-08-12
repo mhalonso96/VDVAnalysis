@@ -258,6 +258,7 @@ class VDVAnalysis:
             y5 = result[i]['window']['TransOutputShaftSpeed']
             y6 = result[i]['window']['WheelBasedVehicleSpeed'] 
             y7 = result[i]['window']['ActualEngPercentTorque']
+            y8 = result[i]['window']['LCIBEVO_IBkActive']
             
             ax.plot(x, y1, label="TransSelectedGear", color="orange", linestyle='--')
             ax.plot(x, y2, label="TransCurrentGear", color="blue", linestyle='--')
@@ -282,6 +283,12 @@ class VDVAnalysis:
             ax4.tick_params(axis='y', labelcolor='green', direction='out')
             ax4.spines['right'].set_position(('outward', 100))
 
+            ax5 = ax.twinx()
+            ax5.plot(x, y8, label='ActualEngPercentTorque', color='pink')
+            ax5.set_ylabel('LCIB Active', color='pink',fontsize=8)
+            ax5.tick_params(axis='y', labelcolor='pink', direction='out')
+            ax5.spines['right'].set_position(('outward', 150))
+
             ax.set_xlabel("Time", fontsize=8)          
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             ax.text(0.05, 0.55, textstr_1, transform=ax.transAxes, fontsize=8,
@@ -290,12 +297,13 @@ class VDVAnalysis:
                     verticalalignment='top', bbox=props)
 
             # Combinando todas as legendas em uma única caixa
-            lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax3]]
+            lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax3, ax4, ax5]]
             lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
             ax.legend(lines, labels, loc='center right', fontsize=7)
         
         
         plt.show()
+
 
 
         
