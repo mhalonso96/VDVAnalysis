@@ -268,13 +268,13 @@ class VDVAnalysis:
             ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
             ax2.plot(x, y4, label='EngSpeed', color="yellow")
             ax2.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
-            ax2.set_ylabel('Rotation (RPM)', color='red', fontsize=8)
+            ax2.set_ylabel('Rotation (rpm)', color='red', fontsize=8)
             ax2.tick_params(axis='y', labelcolor='red', direction='out')
             ax2.spines['right'].set_position(('outward', 50))
 
             ax3 = ax.twinx()
             ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color="black")
-            ax3.set_ylabel('Speed (KM/h)', color='black', fontsize=8)
+            ax3.set_ylabel('Speed (km/h)', color='black', fontsize=8)
             ax3.tick_params(axis='y', labelcolor='black')
             
             ax4 = ax.twinx()
@@ -285,7 +285,7 @@ class VDVAnalysis:
 
             ax5 = ax.twinx()
             ax5.plot(x, y8, label='ActualEngPercentTorque', color='pink')
-            ax5.set_ylabel('LCIB Active', color='pink',fontsize=8)
+            ax5.set_ylabel('LCIB Active (boolean)', color='pink',fontsize=8)
             ax5.tick_params(axis='y', labelcolor='pink', direction='out')
             ax5.spines['right'].set_position(('outward', 150))
 
