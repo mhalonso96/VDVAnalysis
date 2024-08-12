@@ -266,15 +266,15 @@ class VDVAnalysis:
                 ax2 = ax.twinx()
                 ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
                 ax2.plot(x, y4, label='EngSpeed', color="yellow")
-                ax2.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
-                ax2.set_ylabel('Rotation (rpm)', color='red', fontsize=8)
+                
+                ax2.set_ylabel('In Rotation (rpm)', color='red', fontsize=8)
                 ax2.tick_params(axis='y', labelcolor='red', direction='out')
                 ax2.spines['right'].set_position(('outward', 50))
 
-                # ax3 = ax.twinx()
-                # ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color="black")
-                # ax3.set_ylabel('Speed (km/h)', color='black', fontsize=8)
-                # ax3.tick_params(axis='y', labelcolor='black')
+                ax3 = ax.twinx()
+                ax3.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
+                ax3.set_ylabel(' Out Rotation (rpm)', color='grey', fontsize=8)
+                ax3.tick_params(axis='y', labelcolor='grey')
                 
                 ax4 = ax.twinx()
                 ax4.plot(x, y7, label='ActualEngPercentTorque', color='green')
@@ -296,7 +296,7 @@ class VDVAnalysis:
                         verticalalignment='top', bbox=props)
 
                 # Combinando todas as legendas em uma única caixa
-                lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax4,]]
+                lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax3, ax4,]]
                 lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
                 ax.legend(lines, labels, loc='center right', fontsize=7)
             
