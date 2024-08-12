@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 
 class VDVAnalysis:
-    def __init__(self, currentGear, selectedGear, signals, mdf_extension, input_folder, shift_mode, to_csv=False) -> None:
+    def __init__(self, currentGear, selectedGear, signals, mdf_extension, input_folder, shift_mode, to_csv=False, active_plot=True ) -> None:
         self.currentGear = int(currentGear)
         self.selectedGear = int(selectedGear)
         self.MAXCURRENTGEAR = float(f'{currentGear}.9')
@@ -16,6 +16,7 @@ class VDVAnalysis:
         self.input_folder = input_folder
         self.shift_mode = shift_mode
         self.to_csv = to_csv
+        self.active_plot = active_plot
         self.timestampChangeToShiftInProcess = []
         self.timestampChangeToShiftNotInProcess = []
         self.windows = []
@@ -66,6 +67,7 @@ class VDVAnalysis:
             isWindowCorrect = self.__existsSignalInWindow(signal_1="TransCurrentGear", signal_2="TransSelectedGear", window=window)
             isShiftMode = self. __isShiftMode(window=window)
             window.loc[:,'Delta_Time'] = window.index.to_series().diff()
+            
             window.loc[:,'Delta_Time'] = window.loc[:,'Delta_Time'].dt.total_seconds()  
             dt = self.__dtCalculation(signal_delta_time="Delta_Time", window=window)
             shiftDuration = self.__shiftDurationCalculation(signal_delta_time="Delta_Time", window=window)
@@ -228,81 +230,80 @@ class VDVAnalysis:
         return (signal - min(signal)) / (max(signal) - min(signal))
         
 
-    def plot(self, res):
-        pass
-
     def result(self, result):
         # Definindo o número de gráficos que serão criados
         num_graphs = len(result)
-        
-        # Criando uma figura com subgráficos (subplots) adequados
-        fig, axes = plt.subplots(num_graphs, 1, figsize=(10, num_graphs * 4), sharex=False, constrained_layout=True)
-        
-        if num_graphs == 1:
-            axes = [axes]  # Garantir que axes seja uma lista, mesmo que haja apenas um gráfico
-        
-        for i, ax in enumerate(axes):
-            name_IS = result[i]['name_IS']
-            name_OS = result[i]['name_OS']
-            shift_duration = result[i]['shift_duration']
-            vdv_IS = result[i]['VDV_IS']
-            vdv_OS = result[i]['VDV_OS']
+        if self.active_plot:
+            # Criando uma figura com subgráficos (subplots) adequados
+            fig, axes = plt.subplots(num_graphs, 1, figsize=(10, num_graphs * 4), sharex=False, constrained_layout=True)
             
-            textstr_1 = f'name={name_IS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_IS:.2f}'
-            textstr_2 = f'name={name_OS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_OS:.2f}'
-            x = result[i]['window'].index
-            y1 = result[i]['window']['TransSelectedGear']
-            y2 = result[i]['window']['TransCurrentGear']
-            y3 = result[i]['window']['TransInputShaftSpeed']
-            y4 = result[i]['window']['EngSpeed']
-            y5 = result[i]['window']['TransOutputShaftSpeed']
-            y6 = result[i]['window']['WheelBasedVehicleSpeed'] 
-            y7 = result[i]['window']['ActualEngPercentTorque']
-            y8 = result[i]['window']['LCIBEVO_IBkActive']
+            if num_graphs == 1:
+                axes = [axes]  # Garantir que axes seja uma lista, mesmo que haja apenas um gráfico
             
-            ax.plot(x, y1, label="TransSelectedGear", color="orange", linestyle='--')
-            ax.plot(x, y2, label="TransCurrentGear", color="blue", linestyle='--')
-            ax.set_ylabel('Gears', color='black', fontsize=8)
+            for i, ax in enumerate(axes):
+                name_IS = result[i]['name_IS']
+                name_OS = result[i]['name_OS']
+                shift_duration = result[i]['shift_duration']
+                vdv_IS = result[i]['VDV_IS']
+                vdv_OS = result[i]['VDV_OS']
+                
+                textstr_1 = f'name={name_IS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_IS:.2f}'
+                textstr_2 = f'name={name_OS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_OS:.2f}'
+                x = result[i]['window'].index
+                y1 = result[i]['window']['TransSelectedGear']
+                y2 = result[i]['window']['TransCurrentGear']
+                y3 = result[i]['window']['TransInputShaftSpeed']
+                y4 = result[i]['window']['EngSpeed']
+                y5 = result[i]['window']['TransOutputShaftSpeed']
+                # y6 = result[i]['window']['WheelBasedVehicleSpeed'] 
+                y7 = result[i]['window']['ActualEngPercentTorque']
+                # y8 = result[i]['window']['LCIBEVO_IBkActive']
+                
+                ax.plot(x, y1, label="TransSelectedGear", color="orange", linestyle='--')
+                ax.plot(x, y2, label="TransCurrentGear", color="blue", linestyle='--')
+                ax.set_ylabel('Gears', color='black', fontsize=8)
 
-            ax2 = ax.twinx()
-            ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
-            ax2.plot(x, y4, label='EngSpeed', color="yellow")
-            ax2.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
-            ax2.set_ylabel('Rotation (rpm)', color='red', fontsize=8)
-            ax2.tick_params(axis='y', labelcolor='red', direction='out')
-            ax2.spines['right'].set_position(('outward', 50))
+                ax2 = ax.twinx()
+                ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
+                ax2.plot(x, y4, label='EngSpeed', color="yellow")
+                ax2.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
+                ax2.set_ylabel('Rotation (rpm)', color='red', fontsize=8)
+                ax2.tick_params(axis='y', labelcolor='red', direction='out')
+                ax2.spines['right'].set_position(('outward', 50))
 
-            ax3 = ax.twinx()
-            ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color="black")
-            ax3.set_ylabel('Speed (km/h)', color='black', fontsize=8)
-            ax3.tick_params(axis='y', labelcolor='black')
+                # ax3 = ax.twinx()
+                # ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color="black")
+                # ax3.set_ylabel('Speed (km/h)', color='black', fontsize=8)
+                # ax3.tick_params(axis='y', labelcolor='black')
+                
+                ax4 = ax.twinx()
+                ax4.plot(x, y7, label='ActualEngPercentTorque', color='green')
+                ax4.set_ylabel('Torque (%)', color='green', fontsize=8)
+                ax4.tick_params(axis='y', labelcolor='green', direction='out')
+                ax4.spines['right'].set_position(('outward', 100))
+
+                # ax5 = ax.twinx()
+                # ax5.plot(x, y8, label='LCIB_Active', color='pink')
+                # ax5.set_ylabel('LCIB Active (boolean)', color='pink',fontsize=8)
+                # ax5.tick_params(axis='y', labelcolor='pink', direction='out')
+                # ax5.spines['right'].set_position(('outward', 150))
+
+                ax.set_xlabel("Time", fontsize=8)          
+                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                ax.text(0.05, 0.55, textstr_1, transform=ax.transAxes, fontsize=8,
+                        verticalalignment='top', bbox=props)
+                ax.text(0.05, 0.35, textstr_2, transform=ax.transAxes, fontsize=8,
+                        verticalalignment='top', bbox=props)
+
+                # Combinando todas as legendas em uma única caixa
+                lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax4,]]
+                lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+                ax.legend(lines, labels, loc='center right', fontsize=7)
             
-            ax4 = ax.twinx()
-            ax4.plot(x, y7, label='ActualEngPercentTorque', color='green')
-            ax4.set_ylabel('Torque (%)', color='green', fontsize=8)
-            ax4.tick_params(axis='y', labelcolor='green', direction='out')
-            ax4.spines['right'].set_position(('outward', 100))
-
-            ax5 = ax.twinx()
-            ax5.plot(x, y8, label='ActualEngPercentTorque', color='pink')
-            ax5.set_ylabel('LCIB Active (boolean)', color='pink',fontsize=8)
-            ax5.tick_params(axis='y', labelcolor='pink', direction='out')
-            ax5.spines['right'].set_position(('outward', 150))
-
-            ax.set_xlabel("Time", fontsize=8)          
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax.text(0.05, 0.55, textstr_1, transform=ax.transAxes, fontsize=8,
-                    verticalalignment='top', bbox=props)
-            ax.text(0.05, 0.35, textstr_2, transform=ax.transAxes, fontsize=8,
-                    verticalalignment='top', bbox=props)
-
-            # Combinando todas as legendas em uma única caixa
-            lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax3, ax4, ax5]]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            ax.legend(lines, labels, loc='center right', fontsize=7)
-        
-        
-        plt.show()
+            
+            plt.show()
+        else:
+            print(f'The plot was disabled.')
 
 
 
