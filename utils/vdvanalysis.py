@@ -1,11 +1,12 @@
 from pathlib import Path
-from asammdf import MDF, Signal
+from asammdf import MDF
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 class VDVAnalysis:
-    def __init__(self, currentGear, selectedGear, signals, mdf_extension, input_folder, shift_mode) -> None:
+    def __init__(self, currentGear, selectedGear, signals, mdf_extension, input_folder, shift_mode, to_csv=False) -> None:
         self.currentGear = int(currentGear)
         self.selectedGear = int(selectedGear)
         self.MAXCURRENTGEAR = float(f'{currentGear}.9')
@@ -14,6 +15,7 @@ class VDVAnalysis:
         self.mdf_extension = mdf_extension
         self.input_folder = input_folder
         self.shift_mode = shift_mode
+        self.to_csv = to_csv
         self.timestampChangeToShiftInProcess = []
         self.timestampChangeToShiftNotInProcess = []
         self.windows = []
@@ -26,8 +28,9 @@ class VDVAnalysis:
         path_in = Path(path, self.input_folder)
         
         logfiles = list(path_in.glob("*" + self.mdf_extension))
-        # mdf = MDF.concatenate(logfiles)
-        # mdf_scaled = mdf.filter(self.signals)
+        if not logfiles:
+            raise FileNotFoundError(f"No files with extension {self.mdf_extension} found in {path_in}")
+
         mdf= MDF(logfiles[0])
         mdf_scaled = mdf.to_dataframe(time_as_date=True)
         frame = mdf_scaled[self.signals]
@@ -45,7 +48,8 @@ class VDVAnalysis:
             
         
         return data
-    
+
+
     def __processing(self, data):
         # data.to_csv('teste.csv')
         windows =self.set_window(data)  
@@ -83,9 +87,11 @@ class VDVAnalysis:
                     'window' : window,
                 }
                 
-                window.to_csv(f'VDV_{self.shift_mode}_{self.selectedGear}_GEAR_{i}_.csv') 
+                
                 self.results.append(result)
                 print(f"The Acquisition {i} was approved ...")
+                if self.to_csv:
+                    window.to_csv(f'VDV_{self.shift_mode}_{self.selectedGear}_GEAR_{i}_.csv') 
                 
 
             else:
@@ -93,6 +99,7 @@ class VDVAnalysis:
 
         print(f'Analyzer VDV finished')
         return self.results
+    
 
     def get_maxCurrentGear(self):
         return float(self.MAXCURRENTGEAR)
@@ -106,8 +113,6 @@ class VDVAnalysis:
     def get_input_folder(self):
         return self.input_folder
     
-    def get_output_folder(self):
-        return self.output_folder
     
     def set_window(self, data):
         for i in range(0, len(data)):
@@ -223,87 +228,75 @@ class VDVAnalysis:
         return (signal - min(signal)) / (max(signal) - min(signal))
         
 
-
     def plot(self, res):
-        ...
-    # #    fig, axs = plt.subplots(2, 2, layout='constrained')
-    #     for i in range(len(res)):
-    #         x = res[i]['window']
-    #         print(x)
-        # y1 = data['TransSelectedGear']
-        # y2 = data['TransCurrentGear']
-        # y3 = data['TransInputShaftSpeed']
-        # y4 = data['EngSpeed']
-        # y5 = data['TransOutputShaftSpeed']
-        # y6 = data['WheelBasedVehicleSpeed']
-        # name_1 =res[0]['name']
-        # shift_duration_1 = res[0]['shift_duration']
-        # VDV_1 = res[0]['VDV']
-        # name_2 =res[1]['name']
-        # shift_duration_2 = res[1]['shift_duration']
-        # VDV_2 = res[1]['VDV']
-                
-    
-        # fig, ax1 = plt.subplots()
-        # ax1.plot(x, y1, label="TransSelectedGear", color="orange")
-        # ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
-
-        # ax2 = ax1.twinx()
-        # ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
-        # ax2.plot(x, y4, label='EngSpeed', color= "yellow")   
-        # ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
-        # ax3 = ax1.twinx()
-        # ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color= "black")
-        # textstr_1 = f'name={name_1}\nShit Duration={shift_duration_1:.2f}\nVDV={VDV_1:.2f}'
-        # textstr_2 = f'name={name_2}\nShit Duration={shift_duration_2:.2f}\nVDV={VDV_2:.2f}'
-        # props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-        # ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
-        # verticalalignment='top', bbox=props)
-        # ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
-        # verticalalignment='top', bbox=props)
-        # plt.title('VDV WINDOW ANALYSIS')
-        # plt.legend() 
-        # plt.show()    
+        pass
 
     def result(self, result):
-        for i in range (len(result)):
-            name_IS =result[i]['name_IS']
-            name_OS =result[i]['name_OS']
+        # Definindo o número de gráficos que serão criados
+        num_graphs = len(result)
+        
+        # Criando uma figura com subgráficos (subplots) adequados
+        fig, axes = plt.subplots(num_graphs, 1, figsize=(10, num_graphs * 4), sharex=False, constrained_layout=True)
+        
+        if num_graphs == 1:
+            axes = [axes]  # Garantir que axes seja uma lista, mesmo que haja apenas um gráfico
+        
+        for i, ax in enumerate(axes):
+            name_IS = result[i]['name_IS']
+            name_OS = result[i]['name_OS']
             shift_duration = result[i]['shift_duration']
             vdv_IS = result[i]['VDV_IS']
             vdv_OS = result[i]['VDV_OS']
-            selectGear = result[i]['select_gear']
-            currentGear = result[i]['current_gear']
-            print(f' {i} - The Vibration Dose Value of {name_IS} in {currentGear}->{selectGear} gear is {vdv_IS} with {shift_duration} seconds.')
-            print(f' {i} - The Vibration Dose Value of {name_OS} in {currentGear}->{selectGear} gear is {vdv_OS} with {shift_duration} seconds.')
+            
+            textstr_1 = f'name={name_IS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_IS:.2f}'
+            textstr_2 = f'name={name_OS}\nShift Duration={shift_duration:.2f}\nVDV={vdv_OS:.2f}'
             x = result[i]['window'].index
             y1 = result[i]['window']['TransSelectedGear']
             y2 = result[i]['window']['TransCurrentGear']
             y3 = result[i]['window']['TransInputShaftSpeed']
             y4 = result[i]['window']['EngSpeed']
             y5 = result[i]['window']['TransOutputShaftSpeed']
-            y6 = result[i]['window']['WheelBasedVehicleSpeed']
+            y6 = result[i]['window']['WheelBasedVehicleSpeed'] 
+            y7 = result[i]['window']['ActualEngPercentTorque']
             
-            fig, ax1 = plt.subplots()
-            ax1.plot(x, y1, label="TransSelectedGear", color="orange")
-            ax1.plot(x, y2, label ="TransCurrentGear", color="blue")
+            ax.plot(x, y1, label="TransSelectedGear", color="orange", linestyle='--')
+            ax.plot(x, y2, label="TransCurrentGear", color="blue", linestyle='--')
+            ax.set_ylabel('Gears', color='black', fontsize=8)
 
-            ax2 = ax1.twinx()
-            ax2.plot(x, y3, label='TransInputShaftSpeed', color= "red")
-            ax2.plot(x, y4, label='EngSpeed', color= "yellow")   
-            ax2.plot(x, y5, label='TransOutputShaftSpeed', color= "grey")
-            ax3 = ax1.twinx()
-            ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color= "black")
-            textstr_1 = f'name={name_IS}\nShit Duration={shift_duration:.2f}\nVDV={vdv_IS:.2f}'
-            textstr_2 = f'name={name_OS}\nShit Duration={shift_duration:.2f}\nVDV={vdv_OS:.2f}'
+            ax2 = ax.twinx()
+            ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
+            ax2.plot(x, y4, label='EngSpeed', color="yellow")
+            ax2.plot(x, y5, label='TransOutputShaftSpeed', color="grey")
+            ax2.set_ylabel('Rotation (RPM)', color='red', fontsize=8)
+            ax2.tick_params(axis='y', labelcolor='red', direction='out')
+            ax2.spines['right'].set_position(('outward', 50))
+
+            ax3 = ax.twinx()
+            ax3.plot(x, y6, label='WheelBasedVehicleSpeed', color="black")
+            ax3.set_ylabel('Speed (KM/h)', color='black', fontsize=8)
+            ax3.tick_params(axis='y', labelcolor='black')
+            
+            ax4 = ax.twinx()
+            ax4.plot(x, y7, label='ActualEngPercentTorque', color='green')
+            ax4.set_ylabel('Torque (%)', color='green', fontsize=8)
+            ax4.tick_params(axis='y', labelcolor='green', direction='out')
+            ax4.spines['right'].set_position(('outward', 100))
+
+            ax.set_xlabel("Time", fontsize=8)          
             props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-            ax1.text(0.05, 0.55, textstr_1, transform=ax1.transAxes, fontsize=8,
-            verticalalignment='top', bbox=props)
-            ax1.text(0.05, 0.35, textstr_2, transform=ax1.transAxes, fontsize=8,
-            verticalalignment='top', bbox=props)
-            plt.legend() 
-            plt.title('VDV WINDOW ANALYSIS')
-        
-        plt.show()    
+            ax.text(0.05, 0.55, textstr_1, transform=ax.transAxes, fontsize=8,
+                    verticalalignment='top', bbox=props)
+            ax.text(0.05, 0.35, textstr_2, transform=ax.transAxes, fontsize=8,
+                    verticalalignment='top', bbox=props)
 
-            
+            # Combinando todas as legendas em uma única caixa
+            lines_labels = [ax.get_legend_handles_labels() for ax in [ax, ax2, ax3]]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            ax.legend(lines, labels, loc='center right', fontsize=7)
+        
+        
+        plt.show()
+
+
+        
+   
