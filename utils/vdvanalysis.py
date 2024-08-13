@@ -266,7 +266,6 @@ class VDVAnalysis:
                 ax2 = ax.twinx()
                 ax2.plot(x, y3, label='TransInputShaftSpeed', color="red")
                 ax2.plot(x, y4, label='EngSpeed', color="yellow")
-                
                 ax2.set_ylabel('In Rotation (rpm)', color='red', fontsize=8)
                 ax2.tick_params(axis='y', labelcolor='red', direction='out')
                 ax2.spines['right'].set_position(('outward', 50))
